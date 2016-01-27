@@ -1,0 +1,14 @@
+This folder contains the ROM image for the catbox.
+
+catbox.bin	- this is the original ROM dump which I found here:
+		  http://gamearchive.askey.org/General/Data_Sheets/atari_cat_box/cat.bin
+
+catbox.a	- created using a home-grown 6502 disassembler
+		 
+catbox.out 	- produced by assembling the source file with the Acme 6502 assembler
+
+The good news is that catbox.bin and catbox.out are identical, proving that
+my disassembler did a good job.
+
+The source code is really to help my understanding of the hardware as I construct the VHDL.
+

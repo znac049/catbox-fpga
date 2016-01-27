@@ -1,0 +1,873 @@
+Atari CAT Box ROM Disassembly
+1/8/98 Jess Askey
+
+Game/Box Counter EQU $2000
+Segment Select EQU $2B00
+Digit Select/SA Enabled EQU $3000
+Signature Analyser Reset EQU $3800
+Address Flag EQU $4000
+Data Flag EQU $4001
+1 Byte Flag EQU $4002
+1K Byte Flag EQU $4003
+Spare Input EQU $4004
+R/W Flag EQU $4005
+Self Test Flag (1=ST) EQU $4006
+Done Flag (0=Done) EQU $4007
+Switch Inputs EQU $4008
+Keypad: 3,7,B,F EQU $4010
+Keypad: 2,6,A,E EQU $4020
+Keypad: 1,5,9,D EQU $4040
+Keypad: 0,4,8,C EQU $4080
+R/W Mode (D2=static D1=pulse) EQU $4100
+
+
+6000 02 BB 5A 30 50 EE 3D A8 43 4F 50 59 52 49 47 48 
+6010: 54 20 31 39 38 30 2C 20 41 54 41 52 49 2C 20 49 
+6020: 4E 43 2E 
+
+6023 A5:80      LDA:zp     Zp RAM 0080
+6025 29:7F      AND:imm    #7F
+6027 85:80      STA:zp     Zp RAM 0080
+6029 2C:06 40   BIT:abs    Self Test Flag (1=ST)
+602C 10:03      BPL:rel    Branch->$6031
+602E 4C:C7 60   JMP:abs    $60C7
+
+6031 AD:08 40   LDA:abs    Switch Inputs
+6034 29:02      AND:imm    #02
+6036 F0:06      BEQ:rel    Branch->$603E
+6038 20:6A 60   JSR:abs    $606A
+603B 4C:54 60   JMP:abs    $6054
+
+603E A9:00      LDA:imm    #00
+6040 85:9B      STA:zp     Zp RAM 009B
+6042 85:97      STA:zp     Zp RAM 0097
+6044 85:9C      STA:zp     Zp RAM 009C
+6046 85:98      STA:zp     Zp RAM 0098
+6048 8D:00 38   STA:abs    Signature Analyser Reset
+604B 20:EF 60   JSR:abs    $60EF
+604E 20:C7 62   JSR:abs    $62C7
+6051 20:24 63   JSR:abs    $6324
+6054 A9:00      LDA:imm    #00
+6056 85:94      STA:zp     Zp RAM 0094
+6058 A5:80      LDA:zp     Zp RAM 0080
+605A 30:0B      BMI:rel    Branch->$6067
+605C E6:94      INC:zp     Zp RAM 0094
+605E D0:F8      BNE:rel    Branch->$6058
+6060 A9:2F      LDA:imm    #2F
+6062 85:1E      STA:zp     Zp RAM 001E
+6064 58:        CLI:imp    Enable IRQ
+6065 D0:F1      BNE:rel    Branch->$6058
+6067 4C:23 60   JMP:abs    $6023
+606A A9:00      LDA:imm    #00
+606C 85:96      STA:zp     Zp RAM 0096
+606E 85:98      STA:zp     Zp RAM 0098
+6070 85:82      STA:zp     Zp RAM 0082
+6072 A9:10      LDA:imm    #10
+6074 85:9B      STA:zp     Zp RAM 009B
+6076 A5:9C      LDA:zp     Zp RAM 009C
+6078 F0:08      BEQ:rel    Branch->$6082
+607A C6:9C      DEC:zp     Zp RAM 009C
+607C A9:40      LDA:imm    #40
+607E 85:97      STA:zp     Zp RAM 0097
+6080 D0:04      BNE:rel    Branch->$6086
+6082 A9:00      LDA:imm    #00
+6084 85:97      STA:zp     Zp RAM 0097
+6086 2C:07 40   BIT:abs    Done Flag (0=Done)
+6089 10:01      BPL:rel    Branch->$608C
+608B 60:        RTS:imp    Ret from Sub
+608C A2:40      LDX:imm    #40
+608E A5:02      LDA:zp     Zp RAM 0002
+6090 C5:83      CMP:zp     Zp RAM 0083
+6092 F0:02      BEQ:rel    Branch->$6096
+6094 86:9C      STX:zp     Zp RAM 009C
+6096 85:83      STA:zp     Zp RAM 0083
+6098 A5:00      LDA:zp     Zp RAM 0000
+609A C5:84      CMP:zp     Zp RAM 0084
+609C F0:02      BEQ:rel    Branch->$60A0
+609E 86:9C      STX:zp     Zp RAM 009C
+60A0 85:84      STA:zp     Zp RAM 0084
+60A2 A9:00      LDA:imm    #00
+60A4 8D:00 38   STA:abs    Signature Analyser Reset
+60A7 60:        RTS:imp    Ret from Sub
+
+
+60A8 48:        PHA:imp    Push Accum	*** IRQ ENTRY ***
+60A9 8A:        TXA:imp    X-->A
+60AA 48:        PHA:imp    Push Accum
+60AB 98:        TYA:imp    Y-->A
+60AC 48:        PHA:imp    Push Accum
+60AD D8:        CLD:imp    Unset Decimal
+60AE A5:80      LDA:zp     Zp RAM 0080
+60B0 09:80      ORA:imm    #80
+60B2 85:80      STA:zp     Zp RAM 0080
+60B4 A9:2F      LDA:imm    #2F
+60B6 85:1E      STA:zp     Zp RAM 001E
+60B8 AD:06 40   LDA:abs    Self Test Flag (1=ST)
+60BB 30:03      BMI:rel    Branch->$60C0
+60BD 20:2E 64   JSR:abs    $642E
+60C0 68:        PLA:imp    Pull Accum
+60C1 A8:        TAY:imp    A-->Y
+60C2 68:        PLA:imp    Pull Accum
+60C3 AA:        TAX:imp    A-->X
+60C4 68:        PLA:imp    Pull Accum
+60C5 58:        CLI:imp    Enable IRQ
+60C6 40:        RTI:imp    Ret from Int
+
+
+60C7 78:        SEI:imp    Disable IRQ	*** RESET ENTRY ***
+60C8 D8:        CLD:imp    Unset Decimal
+60C9 A2:FF      LDX:imm    #FF
+60CB 9A:        TXS:imp    X-->Stack
+60CC A9:00      LDA:imm    #00
+60CE 2C:06 40   BIT:abs    Self Test Flag (1=ST)
+60D1 10:03      BPL:rel    Branch->$60D6
+60D3 4C:BB 64   JMP:abs    $64BB
+60D6 95:00      STA:zp,x   Zp RAM 0000
+60D8 CA:        DEX:imp    X=X-1
+60D9 30:FB      BMI:rel    Branch->$60D6
+60DB 8D:00 30   STA:abs    Digit Select/SA Enabled
+60DE 8D:00 38   STA:abs    Signature Analyser Reset
+60E1 85:04      STA:zp     Zp RAM 0004
+60E3 85:01      STA:zp     Zp RAM 0001
+60E5 85:03      STA:zp     Zp RAM 0003
+60E7 A9:2F      LDA:imm    #2F
+60E9 85:1E      STA:zp     Zp RAM 001E
+60EB 58:        CLI:imp    Enable IRQ
+60EC 4C:23 60   JMP:abs    $6023
+60EF AD:00 41   LDA:abs    R/W Mode (D2=static D1=pulse)
+60F2 6A:        ROT:accum  
+60F3 6A:        ROT:accum  
+60F4 6A:        ROT:accum  
+60F5 20:95 62   JSR:abs    $6295
+60F8 A0:00      LDY:imm    #00
+60FA 24:9A      BIT:zp     Zp RAM 009A
+60FC 30:03      BMI:rel    Branch->$6101
+60FE 70:0F      BVS:rel    Branch->$610F
+6100 60:        RTS:imp    Ret from Sub
+6101 A9:20      LDA:imm    #20
+6103 85:98      STA:zp     Zp RAM 0098
+6105 84:99      STY:zp     Zp RAM 0099
+6107 A5:86      LDA:zp     Zp RAM 0086
+6109 85:83      STA:zp     Zp RAM 0083
+610B A5:87      LDA:zp     Zp RAM 0087
+610D 85:84      STA:zp     Zp RAM 0084
+610F A5:9A      LDA:zp     Zp RAM 009A
+6111 29:BF      AND:imm    #BF
+6113 85:9A      STA:zp     Zp RAM 009A
+6115 84:96      STY:zp     Zp RAM 0096
+6117 A5:83      LDA:zp     Zp RAM 0083
+6119 85:86      STA:zp     Zp RAM 0086
+611B A5:84      LDA:zp     Zp RAM 0084
+611D 85:87      STA:zp     Zp RAM 0087
+611F AD:08 40   LDA:abs    Switch Inputs
+6122 29:02      AND:imm    #02
+6124 D0:05      BNE:rel    Branch->$612B
+6126 2C:06 40   BIT:abs    Self Test Flag (1=ST)
+6129 10:01      BPL:rel    Branch->$612C
+612B 60:        RTS:imp    Ret from Sub
+612C 84:94      STY:zp     Zp RAM 0094
+612E 84:95      STY:zp     Zp RAM 0095
+6130 2C:03 40   BIT:abs    1K Byte Flag
+6133 10:04      BPL:rel    Branch->$6139
+6135 A9:03      LDA:imm    #03
+6137 85:95      STA:zp     Zp RAM 0095
+6139 2C:05 40   BIT:abs    R/W Flag
+613C 30:03      BMI:rel    Branch->$6141
+613E 4C:C5 61   JMP:abs    $61C5
+6141 2C:04 40   BIT:abs    Spare Input
+6144 10:03      BPL:rel    Branch->$6149
+6146 4C:21 62   JMP:abs    $6221
+6149 2C:02 40   BIT:abs    1 Byte Flag
+614C 10:0E      BPL:rel    Branch->$615C
+614E A9:0B      LDA:imm    #0B
+6150 78:        SEI:imp    Disable IRQ
+6151 8D:00 20   STA:abs    Game/Box Counter
+6154 B1:83      LDA:ind,y  83
+6156 58:        CLI:imp    Enable IRQ
+6157 85:82      STA:zp     Zp RAM 0082
+6159 4C:94 61   JMP:abs    $6194
+615C AD:01 40   LDA:abs    Data Flag
+615F 30:0B      BMI:rel    Branch->$616C
+6161 A5:83      LDA:zp     Zp RAM 0083
+6163 2C:00 40   BIT:abs    Address Flag
+6166 10:02      BPL:rel    Branch->$616A
+6168 49:FF      EOR:imm    #FF
+616A 85:82      STA:zp     Zp RAM 0082
+616C A9:0B      LDA:imm    #0B
+616E 78:        SEI:imp    Disable IRQ
+616F 8D:00 20   STA:abs    Game/Box Counter
+6172 B1:83      LDA:ind,y  83
+6174 58:        CLI:imp    Enable IRQ
+6175 C5:82      CMP:zp     Zp RAM 0082
+6177 F0:08      BEQ:rel    Branch->$6181
+6179 85:85      STA:zp     Zp RAM 0085
+617B A9:80      LDA:imm    #80
+617D 85:96      STA:zp     Zp RAM 0096
+617F 30:29      BMI:rel    Branch->$61AA
+6181 E6:83      INC:zp     Zp RAM 0083
+6183 D0:02      BNE:rel    Branch->$6187
+6185 E6:84      INC:zp     Zp RAM 0084
+6187 C6:94      DEC:zp     Zp RAM 0094
+6189 D0:D1      BNE:rel    Branch->$615C
+618B A5:95      LDA:zp     Zp RAM 0095
+618D F0:05      BEQ:rel    Branch->$6194
+618F C6:95      DEC:zp     Zp RAM 0095
+6191 4C:5C 61   JMP:abs    $615C
+6194 24:9A      BIT:zp     Zp RAM 009A
+6196 10:2A      BPL:rel    Branch->$61C2
+6198 AD:00 41   LDA:abs    R/W Mode (D2=static D1=pulse)
+619B 29:02      AND:imm    #02
+619D F0:23      BEQ:rel    Branch->$61C2
+619F A5:86      LDA:zp     Zp RAM 0086
+61A1 85:83      STA:zp     Zp RAM 0083
+61A3 A5:87      LDA:zp     Zp RAM 0087
+61A5 85:84      STA:zp     Zp RAM 0084
+61A7 4C:1F 61   JMP:abs    $611F
+61AA A2:00      LDX:imm    #00
+61AC 2C:06 40   BIT:abs    Self Test Flag (1=ST)
+61AF 30:11      BMI:rel    Branch->$61C2
+61B1 AD:08 40   LDA:abs    Switch Inputs
+61B4 29:02      AND:imm    #02
+61B6 D0:0A      BNE:rel    Branch->$61C2
+61B8 AD:00 41   LDA:abs    R/W Mode (D2=static D1=pulse)
+61BB 29:02      AND:imm    #02
+61BD D0:EB      BNE:rel    Branch->$61AA
+61BF CA:        DEX:imp    X=X-1
+61C0 D0:EA      BNE:rel    Branch->$61AC
+61C2 84:98      STY:zp     Zp RAM 0098
+61C4 60:        RTS:imp    Ret from Sub
+61C5 2C:02 40   BIT:abs    1 Byte Flag
+61C8 10:06      BPL:rel    Branch->$61D0
+61CA 20:0F 62   JSR:abs    $620F
+61CD 4C:F6 61   JMP:abs    $61F6
+61D0 AD:01 40   LDA:abs    Data Flag
+61D3 30:0B      BMI:rel    Branch->$61E0
+61D5 A5:83      LDA:zp     Zp RAM 0083
+61D7 2C:00 40   BIT:abs    Address Flag
+61DA 10:02      BPL:rel    Branch->$61DE
+61DC 49:FF      EOR:imm    #FF
+61DE 85:82      STA:zp     Zp RAM 0082
+61E0 20:0F 62   JSR:abs    $620F
+61E3 C6:94      DEC:zp     Zp RAM 0094
+61E5 D0:06      BNE:rel    Branch->$61ED
+61E7 A5:95      LDA:zp     Zp RAM 0095
+61E9 F0:0B      BEQ:rel    Branch->$61F6
+61EB C6:95      DEC:zp     Zp RAM 0095
+61ED E6:83      INC:zp     Zp RAM 0083
+61EF D0:DF      BNE:rel    Branch->$61D0
+61F1 E6:84      INC:zp     Zp RAM 0084
+61F3 4C:D0 61   JMP:abs    $61D0
+61F6 A5:86      LDA:zp     Zp RAM 0086
+61F8 85:83      STA:zp     Zp RAM 0083
+61FA A5:87      LDA:zp     Zp RAM 0087
+61FC 85:84      STA:zp     Zp RAM 0084
+61FE 24:9A      BIT:zp     Zp RAM 009A
+6200 10:0A      BPL:rel    Branch->$620C
+6202 AD:00 41   LDA:abs    R/W Mode (D2=static D1=pulse)
+6205 29:02      AND:imm    #02
+6207 F0:03      BEQ:rel    Branch->$620C
+6209 4C:1F 61   JMP:abs    $611F
+620C 84:98      STY:zp     Zp RAM 0098
+620E 60:        RTS:imp    Ret from Sub
+620F 78:        SEI:imp    Disable IRQ
+6210 A5:0C      LDA:zp     Zp RAM 000C
+6212 48:        PHA:imp    Push Accum
+6213 A5:82      LDA:zp     Zp RAM 0082
+6215 A2:0A      LDX:imm    #0A
+6217 8E:00 20   STX:abs    Game/Box Counter
+621A 91:83      STA:ind,y  83
+621C 68:        PLA:imp    Pull Accum
+621D 85:1E      STA:zp     Zp RAM 001E
+621F 58:        CLI:imp    Enable IRQ
+6220 60:        RTS:imp    Ret from Sub
+6221 84:82      STY:zp     Zp RAM 0082
+6223 84:85      STY:zp     Zp RAM 0085
+6225 A9:0F      LDA:imm    #0F
+6227 2C:02 40   BIT:abs    1 Byte Flag
+622A 10:04      BPL:rel    Branch->$6230
+622C A9:07      LDA:imm    #07
+622E D0:07      BNE:rel    Branch->$6237
+6230 2C:03 40   BIT:abs    1K Byte Flag
+6233 10:02      BPL:rel    Branch->$6237
+6235 A9:1F      LDA:imm    #1F
+6237 85:95      STA:zp     Zp RAM 0095
+6239 A9:0B      LDA:imm    #0B
+623B 78:        SEI:imp    Disable IRQ
+623C 8D:00 20   STA:abs    Game/Box Counter
+623F B1:83      LDA:ind,y  83
+6241 58:        CLI:imp    Enable IRQ
+6242 2C:01 40   BIT:abs    Data Flag
+6245 10:0D      BPL:rel    Branch->$6254
+6247 18:        CLC:imp    Clear Carry
+6248 65:82      ADC:zp     Zp RAM 0082
+624A 85:82      STA:zp     Zp RAM 0082
+624C 98:        TYA:imp    Y-->A
+624D 65:85      ADC:zp     Zp RAM 0085
+624F 85:85      STA:zp     Zp RAM 0085
+6251 4C:67 62   JMP:abs    $6267
+6254 2C:00 40   BIT:abs    Address Flag
+6257 30:0A      BMI:rel    Branch->$6263
+6259 18:        CLC:imp    Clear Carry
+625A 65:82      ADC:zp     Zp RAM 0082
+625C 69:00      ADC:imm    #00
+625E 85:82      STA:zp     Zp RAM 0082
+6260 4C:67 62   JMP:abs    $6267
+6263 45:82      EOR:zp     Zp RAM 0082
+6265 85:82      STA:zp     Zp RAM 0082
+6267 E6:83      INC:zp     Zp RAM 0083
+6269 D0:02      BNE:rel    Branch->$626D
+626B E6:84      INC:zp     Zp RAM 0084
+626D C6:94      DEC:zp     Zp RAM 0094
+626F D0:C8      BNE:rel    Branch->$6239
+6271 A5:95      LDA:zp     Zp RAM 0095
+6273 F0:05      BEQ:rel    Branch->$627A
+6275 C6:95      DEC:zp     Zp RAM 0095
+6277 4C:39 62   JMP:abs    $6239
+627A A5:82      LDA:zp     Zp RAM 0082
+627C 85:83      STA:zp     Zp RAM 0083
+627E A5:85      LDA:zp     Zp RAM 0085
+6280 85:84      STA:zp     Zp RAM 0084
+6282 A9:02      LDA:imm    #02
+6284 2C:02 40   BIT:abs    1 Byte Flag
+6287 30:07      BMI:rel    Branch->$6290
+6289 0A:        ASL:accum  
+628A 2C:03 40   BIT:abs    1K Byte Flag
+628D 10:01      BPL:rel    Branch->$6290
+628F 0A:        ASL:accum  
+6290 85:82      STA:zp     Zp RAM 0082
+6292 84:98      STY:zp     Zp RAM 0098
+6294 60:        RTS:imp    Ret from Sub
+6295 30:10      BMI:rel    Branch->$62A7
+6297 A5:99      LDA:zp     Zp RAM 0099
+6299 29:7F      AND:imm    #7F
+629B D0:07      BNE:rel    Branch->$62A4
+629D 85:99      STA:zp     Zp RAM 0099
+629F A9:00      LDA:imm    #00
+62A1 85:9A      STA:zp     Zp RAM 009A
+62A3 60:        RTS:imp    Ret from Sub
+62A4 C6:99      DEC:zp     Zp RAM 0099
+62A6 60:        RTS:imp    Ret from Sub
+62A7 A5:99      LDA:zp     Zp RAM 0099
+62A9 C9:FF      CMP:imm    #FF
+62AB D0:07      BNE:rel    Branch->$62B4
+62AD A5:9A      LDA:zp     Zp RAM 009A
+62AF 09:80      ORA:imm    #80
+62B1 85:9A      STA:zp     Zp RAM 009A
+62B3 60:        RTS:imp    Ret from Sub
+62B4 E6:99      INC:zp     Zp RAM 0099
+62B6 A5:99      LDA:zp     Zp RAM 0099
+62B8 C9:10      CMP:imm    #10
+62BA D0:0A      BNE:rel    Branch->$62C6
+62BC 09:40      ORA:imm    #40
+62BE 85:99      STA:zp     Zp RAM 0099
+62C0 A5:9A      LDA:zp     Zp RAM 009A
+62C2 09:40      ORA:imm    #40
+62C4 85:9A      STA:zp     Zp RAM 009A
+62C6 60:        RTS:imp    Ret from Sub
+62C7 AD:00 41   LDA:abs    R/W Mode (D2=static D1=pulse)
+62CA 29:04      AND:imm    #04
+62CC D0:01      BNE:rel    Branch->$62CF
+62CE 60:        RTS:imp    Ret from Sub
+62CF A9:00      LDA:imm    #00
+62D1 85:96      STA:zp     Zp RAM 0096
+62D3 AD:05 40   LDA:abs    R/W Flag
+62D6 10:2A      BPL:rel    Branch->$6302
+62D8 A0:00      LDY:imm    #00
+62DA A9:0B      LDA:imm    #0B
+62DC 78:        SEI:imp    Disable IRQ
+62DD 8D:00 20   STA:abs    Game/Box Counter
+62E0 B1:83      LDA:ind,y  83
+62E2 58:        CLI:imp    Enable IRQ
+62E3 85:82      STA:zp     Zp RAM 0082
+62E5 A9:20      LDA:imm    #20
+62E7 85:98      STA:zp     Zp RAM 0098
+62E9 A9:01      LDA:imm    #01
+62EB 8D:00 38   STA:abs    Signature Analyser Reset
+62EE 2C:05 40   BIT:abs    R/W Flag
+62F1 10:07      BPL:rel    Branch->$62FA
+62F3 AD:00 41   LDA:abs    R/W Mode (D2=static D1=pulse)
+62F6 29:04      AND:imm    #04
+62F8 D0:E0      BNE:rel    Branch->$62DA
+62FA A9:00      LDA:imm    #00
+62FC 85:98      STA:zp     Zp RAM 0098
+62FE 8D:00 38   STA:abs    Signature Analyser Reset
+6301 60:        RTS:imp    Ret from Sub
+6302 A0:00      LDY:imm    #00
+6304 20:0F 62   JSR:abs    $620F
+6307 A9:20      LDA:imm    #20
+6309 85:98      STA:zp     Zp RAM 0098
+630B A9:01      LDA:imm    #01
+630D 8D:00 38   STA:abs    Signature Analyser Reset
+6310 2C:05 40   BIT:abs    R/W Flag
+6313 30:07      BMI:rel    Branch->$631C
+6315 AD:00 41   LDA:abs    R/W Mode (D2=static D1=pulse)
+6318 29:04      AND:imm    #04
+631A D0:F4      BNE:rel    Branch->$6310
+631C A9:00      LDA:imm    #00
+631E 85:98      STA:zp     Zp RAM 0098
+6320 8D:00 38   STA:abs    Signature Analyser Reset
+6323 60:        RTS:imp    Ret from Sub
+6324 AD:08 40   LDA:abs    Switch Inputs
+6327 29:08      AND:imm    #08
+6329 F0:16      BEQ:rel    Branch->$6341
+632B E6:83      INC:zp     Zp RAM 0083
+632D D0:02      BNE:rel    Branch->$6331
+632F E6:84      INC:zp     Zp RAM 0084
+6331 A9:00      LDA:imm    #00
+6333 85:96      STA:zp     Zp RAM 0096
+6335 A2:00      LDX:imm    #00
+6337 AD:08 40   LDA:abs    Switch Inputs
+633A 29:08      AND:imm    #08
+633C D0:F7      BNE:rel    Branch->$6335
+633E CA:        DEX:imp    X=X-1
+633F D0:F6      BNE:rel    Branch->$6337
+6341 A9:00      LDA:imm    #00
+6343 85:9D      STA:zp     Zp RAM 009D
+6345 AD:F0 40   LDA:abs    $40F0
+6348 29:1E      AND:imm    #1E
+634A F0:11      BEQ:rel    Branch->$635D
+634C AD:F0 40   LDA:abs    $40F0
+634F 29:1E      AND:imm    #1E
+6351 F0:0A      BEQ:rel    Branch->$635D
+6353 A9:80      LDA:imm    #80
+6355 85:9D      STA:zp     Zp RAM 009D
+6357 A9:04      LDA:imm    #04
+6359 85:9E      STA:zp     Zp RAM 009E
+635B D0:0F      BNE:rel    Branch->$636C
+635D AD:08 40   LDA:abs    Switch Inputs
+6360 29:04      AND:imm    #04
+6362 F0:17      BEQ:rel    Branch->$637B
+6364 A9:40      LDA:imm    #40
+6366 85:9D      STA:zp     Zp RAM 009D
+6368 A9:02      LDA:imm    #02
+636A 85:9F      STA:zp     Zp RAM 009F
+636C 20:7C 63   JSR:abs    $637C
+636F A2:00      LDX:imm    #00
+6371 AD:F0 40   LDA:abs    $40F0
+6374 29:1E      AND:imm    #1E
+6376 D0:F7      BNE:rel    Branch->$636F
+6378 CA:        DEX:imp    X=X-1
+6379 D0:F6      BNE:rel    Branch->$6371
+637B 60:        RTS:imp    Ret from Sub
+637C A9:00      LDA:imm    #00
+637E 85:AA      STA:zp     Zp RAM 00AA
+6380 85:96      STA:zp     Zp RAM 0096
+6382 A2:04      LDX:imm    #04
+6384 95:A0      STA:zp,x   Zp RAM 00A0
+6386 95:A5      STA:zp,x   Zp RAM 00A5
+6388 CA:        DEX:imp    X=X-1
+6389 10:F9      BPL:rel    Branch->$6384
+638B 24:9D      BIT:zp     Zp RAM 009D
+638D 10:1D      BPL:rel    Branch->$63AC
+638F A0:01      LDY:imm    #01
+6391 20:C1 63   JSR:abs    $63C1
+6394 0A:        ASL:accum  
+6395 0A:        ASL:accum  
+6396 0A:        ASL:accum  
+6397 0A:        ASL:accum  
+6398 99:83 00   STA:abs,y  $0083,Y
+639B C6:9E      DEC:zp     Zp RAM 009E
+639D 20:C1 63   JSR:abs    $63C1
+63A0 19:83 00   ORA:abs,y  $0083,Y
+63A3 99:83 00   STA:abs,y  $0083,Y
+63A6 C6:9E      DEC:zp     Zp RAM 009E
+63A8 88:        DEY:imp    Y=Y-1
+63A9 10:E6      BPL:rel    Branch->$6391
+63AB 60:        RTS:imp    Ret from Sub
+63AC 20:C1 63   JSR:abs    $63C1
+63AF 0A:        ASL:accum  
+63B0 0A:        ASL:accum  
+63B1 0A:        ASL:accum  
+63B2 0A:        ASL:accum  
+63B3 85:82      STA:zp     Zp RAM 0082
+63B5 C6:9F      DEC:zp     Zp RAM 009F
+63B7 20:C1 63   JSR:abs    $63C1
+63BA 05:82      ORA:zp     Zp RAM 0082
+63BC 85:82      STA:zp     Zp RAM 0082
+63BE C6:9F      DEC:zp     Zp RAM 009F
+63C0 60:        RTS:imp    Ret from Sub
+63C1 98:        TYA:imp    Y-->A
+63C2 48:        PHA:imp    Push Accum
+63C3 20:E9 63   JSR:abs    $63E9
+63C6 48:        PHA:imp    Push Accum
+63C7 AD:08 40   LDA:abs    Switch Inputs
+63CA 29:02      AND:imm    #02
+63CC F0:03      BEQ:rel    Branch->$63D1
+63CE 4C:C7 60   JMP:abs    $60C7
+63D1 68:        PLA:imp    Pull Accum
+63D2 A0:08      LDY:imm    #08
+63D4 CA:        DEX:imp    X=X-1
+63D5 D0:FD      BNE:rel    Branch->$63D4
+63D7 88:        DEY:imp    Y=Y-1
+63D8 D0:FA      BNE:rel    Branch->$63D4
+63DA 24:AA      BIT:zp     Zp RAM 00AA
+63DC 30:E5      BMI:rel    Branch->$63C3
+63DE B0:E3      BCS:rel    Branch->$63C3
+63E0 AA:        TAX:imp    A-->X
+63E1 A9:80      LDA:imm    #80
+63E3 85:AA      STA:zp     Zp RAM 00AA
+63E5 68:        PLA:imp    Pull Accum
+63E6 A8:        TAY:imp    A-->Y
+63E7 8A:        TXA:imp    X-->A
+63E8 60:        RTS:imp    Ret from Sub
+63E9 A9:40      LDA:imm    #40
+63EB 85:95      STA:zp     Zp RAM 0095
+63ED A9:80      LDA:imm    #80
+63EF 85:94      STA:zp     Zp RAM 0094
+63F1 A2:03      LDX:imm    #03
+63F3 20:14 64   JSR:abs    $6414
+63F6 D0:09      BNE:rel    Branch->$6401
+63F8 46:94      LSR:zp     Zp RAM 0094
+63FA CA:        DEX:imp    X=X-1
+63FB 10:F6      BPL:rel    Branch->$63F3
+63FD 85:AA      STA:zp     Zp RAM 00AA
+63FF 38:        SEC:imp    Set Carry
+6400 60:        RTS:imp    Ret from Sub
+6401 A0:FF      LDY:imm    #FF
+6403 4A:        LSR:accum  
+6404 C8:        INY:imp    Y=Y+1
+6405 90:FC      BCC:rel    Branch->$6403
+6407 8A:        TXA:imp    X-->A
+6408 0A:        ASL:accum  
+6409 0A:        ASL:accum  
+640A 84:94      STY:zp     Zp RAM 0094
+640C 65:94      ADC:zp     Zp RAM 0094
+640E AA:        TAX:imp    A-->X
+640F BD:80 66   LDA:abs,x  $6680,X
+6412 18:        CLC:imp    Clear Carry
+6413 60:        RTS:imp    Ret from Sub
+6414 A0:00      LDY:imm    #00
+6416 B1:94      LDA:ind,y  94
+6418 29:1E      AND:imm    #1E
+641A 4A:        LSR:accum  
+641B B4:A0      LDY:zp,x   Zp RAM 00A0
+641D 95:A0      STA:zp,x   Zp RAM 00A0
+641F 98:        TYA:imp    Y-->A
+6420 35:A0      AND:zp,x   Zp RAM 00A0
+6422 15:A5      ORA:zp,x   Zp RAM 00A5
+6424 95:A5      STA:zp,x   Zp RAM 00A5
+6426 98:        TYA:imp    Y-->A
+6427 15:A0      ORA:zp,x   Zp RAM 00A0
+6429 35:A5      AND:zp,x   Zp RAM 00A5
+642B 95:A5      STA:zp,x   Zp RAM 00A5
+642D 60:        RTS:imp    Ret from Sub
+642E A6:81      LDX:zp     Zp RAM 0081
+6430 E8:        INX:imp    X=X+1
+6431 E0:08      CPX:imm    #08
+6433 90:02      BCC:rel    Branch->$6437
+6435 A2:01      LDX:imm    #01
+6437 86:81      STX:zp     Zp RAM 0081
+6439 A9:00      LDA:imm    #00
+643B 8D:00 28   STA:abs    $2800
+643E 8A:        TXA:imp    X-->A
+643F 0A:        ASL:accum  
+6440 0A:        ASL:accum  
+6441 0A:        ASL:accum  
+6442 0A:        ASL:accum  
+6443 0A:        ASL:accum  
+6444 05:9B      ORA:zp     Zp RAM 009B
+6446 8D:00 30   STA:abs    Digit Select/SA Enabled
+6449 AD:08 40   LDA:abs    Switch Inputs
+644C 6A:        ROT:accum  
+644D 6A:        ROT:accum  
+644E 6A:        ROT:accum  
+644F 29:80      AND:imm    #80
+6451 85:AB      STA:zp     Zp RAM 00AB
+6453 E0:07      CPX:imm    #07
+6455 D0:0B      BNE:rel    Branch->$6462
+6457 A9:00      LDA:imm    #00
+6459 05:96      ORA:zp     Zp RAM 0096
+645B 05:97      ORA:zp     Zp RAM 0097
+645D 05:98      ORA:zp     Zp RAM 0098
+645F 4C:B7 64   JMP:abs    $64B7
+6462 CA:        DEX:imp    X=X-1
+6463 8A:        TXA:imp    X-->A
+6464 4A:        LSR:accum  
+6465 AA:        TAX:imp    A-->X
+6466 D0:0D      BNE:rel    Branch->$6475
+6468 A5:96      LDA:zp     Zp RAM 0096
+646A 10:09      BPL:rel    Branch->$6475
+646C AD:08 40   LDA:abs    Switch Inputs
+646F 29:10      AND:imm    #10
+6471 F0:02      BEQ:rel    Branch->$6475
+6473 A2:03      LDX:imm    #03
+6475 B5:82      LDA:zp,x   Zp RAM 0082
+6477 B0:04      BCS:rel    Branch->$647D
+6479 29:0F      AND:imm    #0F
+647B 10:06      BPL:rel    Branch->$6483
+647D 29:F0      AND:imm    #F0
+647F 4A:        LSR:accum  
+6480 4A:        LSR:accum  
+6481 4A:        LSR:accum  
+6482 4A:        LSR:accum  
+6483 C9:0A      CMP:imm    #0A
+6485 90:08      BCC:rel    Branch->$648F
+6487 2C:AB 00   BIT:abs    $00AB
+648A 10:03      BPL:rel    Branch->$648F
+648C 18:        CLC:imp    Clear Carry
+648D 69:06      ADC:imm    #06
+648F A8:        TAY:imp    A-->Y
+6490 B9:6A 66   LDA:abs,y  $666A,Y
+6493 A6:81      LDX:zp     Zp RAM 0081
+6495 E0:03      CPX:imm    #03
+6497 B0:07      BCS:rel    Branch->$64A0
+6499 2C:AB 00   BIT:abs    $00AB
+649C 10:02      BPL:rel    Branch->$64A0
+649E A9:00      LDA:imm    #00
+64A0 2C:AB 00   BIT:abs    $00AB
+64A3 30:12      BMI:rel    Branch->$64B7
+64A5 E4:9F      CPX:zp     Zp RAM 009F
+64A7 F0:0C      BEQ:rel    Branch->$64B5
+64A9 90:0A      BCC:rel    Branch->$64B5
+64AB CA:        DEX:imp    X=X-1
+64AC CA:        DEX:imp    X=X-1
+64AD F0:08      BEQ:rel    Branch->$64B7
+64AF E4:9E      CPX:zp     Zp RAM 009E
+64B1 F0:02      BEQ:rel    Branch->$64B5
+64B3 B0:02      BCS:rel    Branch->$64B7
+64B5 A9:00      LDA:imm    #00
+64B7 8D:00 28   STA:abs    $2800
+64BA 60:        RTS:imp    Ret from Sub
+
+NormalOperation:
+64BB A9:20      LDA:imm    #20
+64BD 8D:00 30   STA:abs    Digit Select/SA Enabled
+64C0 A9:00      LDA:imm    #00
+64C2 8D:00 28   STA:abs    $2800
+64C5 A0:00      LDY:imm    #00
+64C7 A2:00      LDX:imm    #00
+64C9 98:        TYA:imp    Y-->A
+64CA 9D:80 00   STA:abs,x  $0080,X
+64CD C8:        INY:imp    Y=Y+1
+64CE E8:        INX:imp    X=X+1
+64CF 10:F8      BPL:rel    Branch->$64C9
+64D1 8A:        TXA:imp    X-->A
+64D2 18:        CLC:imp    Clear Carry
+64D3 69:80      ADC:imm    #80
+64D5 AA:        TAX:imp    A-->X
+64D6 98:        TYA:imp    Y-->A
+64D7 18:        CLC:imp    Clear Carry
+64D8 69:80      ADC:imm    #80
+64DA A8:        TAY:imp    A-->Y
+64DB 98:        TYA:imp    Y-->A
+64DC 5D:80 00   EOR:abs,x  $0080,X
+64DF 9D:80 00   STA:abs,x  $0080,X
+64E2 F0:04      BEQ:rel    Branch->$64E8
+64E4 A9:06      LDA:imm    #06
+64E6 D0:51      BNE:rel    Branch->$6539
+64E8 C8:        INY:imp    Y=Y+1
+64E9 E8:        INX:imp    X=X+1
+64EA 10:EF      BPL:rel    Branch->$64DB
+64EC 98:        TYA:imp    Y-->A
+64ED 38:        SEC:imp    Set Carry
+64EE 69:80      ADC:imm    #80
+64F0 A8:        TAY:imp    A-->Y
+64F1 D0:D4      BNE:rel    Branch->$64C7
+64F3 A9:67      LDA:imm    #67
+64F5 85:95      STA:zp     Zp RAM 0095
+64F7 A0:07      LDY:imm    #07
+64F9 A2:00      LDX:imm    #00
+64FB 8A:        TXA:imp    X-->A
+64FC 85:94      STA:zp     Zp RAM 0094
+64FE 41:94      EOR:ind,x  94
+6500 C6:94      DEC:zp     Zp RAM 0094
+6502 D0:FA      BNE:rel    Branch->$64FE
+6504 C6:95      DEC:zp     Zp RAM 0095
+6506 88:        DEY:imp    Y=Y-1
+6507 10:F5      BPL:rel    Branch->$64FE
+6509 85:94      STA:zp     Zp RAM 0094
+650B C9:00      CMP:imm    #00
+650D F0:04      BEQ:rel    Branch->$6513
+650F A9:5B      LDA:imm    #5B
+6511 D0:26      BNE:rel    Branch->$6539
+6513 A5:05      LDA:zp     Zp RAM 0005
+6515 85:04      STA:zp     Zp RAM 0004
+6517 A9:2F      LDA:imm    #2F
+6519 85:1E      STA:zp     Zp RAM 001E
+651B 58:        CLI:imp    Enable IRQ
+651C A9:00      LDA:imm    #00
+651E 85:94      STA:zp     Zp RAM 0094
+6520 E6:94      INC:zp     Zp RAM 0094
+6522 A5:94      LDA:zp     Zp RAM 0094
+6524 24:80      BIT:zp     Zp RAM 0080
+6526 30:06      BMI:rel    Branch->$652E
+6528 C9:B0      CMP:imm    #B0
+652A 90:F4      BCC:rel    Branch->$6520
+652C B0:04      BCS:rel    Branch->$6532
+652E C9:9F      CMP:imm    #9F
+6530 B0:04      BCS:rel    Branch->$6536
+6532 A9:4F      LDA:imm    #4F
+6534 D0:03      BNE:rel    Branch->$6539
+6536 4C:50 65   JMP:abs    $6550
+6539 A2:05      LDX:imm    #05
+653B CA:        DEX:imp    X=X-1
+653C D0:05      BNE:rel    Branch->$6543
+653E 8D:00 28   STA:abs    $2800
+6541 F0:F6      BEQ:rel    Branch->$6539
+6543 A0:00      LDY:imm    #00
+6545 8C:00 28   STY:abs    $2800
+6548 2C:06 40   BIT:abs    Self Test Flag (1=ST)
+654B 30:EE      BMI:rel    Branch->$653B
+654D 4C:C7 60   JMP:abs    $60C7
+6550 AD:06 40   LDA:abs    Self Test Flag (1=ST)
+6553 30:03      BMI:rel    Branch->$6558
+6555 4C:C7 60   JMP:abs    $60C7
+6558 A4:98      LDY:zp     Zp RAM 0098
+655A B9:99 65   LDA:abs,y  $6599,Y
+655D 85:94      STA:zp     Zp RAM 0094
+655F B9:9A 65   LDA:abs,y  $659A,Y
+6562 85:95      STA:zp     Zp RAM 0095
+6564 6C:94 00   JMP:ind    $0094
+6567 24:80      BIT:zp     Zp RAM 0080
+6569 10:FC      BPL:rel    Branch->$6567
+656B A9:00      LDA:imm    #00
+656D 85:80      STA:zp     Zp RAM 0080
+656F 20:A3 65   JSR:abs    $65A3
+6572 AD:08 40   LDA:abs    Switch Inputs
+6575 29:0C      AND:imm    #0C
+6577 F0:D7      BEQ:rel    Branch->$6550
+6579 A9:00      LDA:imm    #00
+657B 8D:00 28   STA:abs    $2800
+657E A2:00      LDX:imm    #00
+6580 AD:08 40   LDA:abs    Switch Inputs
+6583 29:0C      AND:imm    #0C
+6585 D0:F7      BNE:rel    Branch->$657E
+6587 CA:        DEX:imp    X=X-1
+6588 D0:F6      BNE:rel    Branch->$6580
+658A A6:98      LDX:zp     Zp RAM 0098
+658C E8:        INX:imp    X=X+1
+658D E8:        INX:imp    X=X+1
+658E E0:09      CPX:imm    #09
+6590 90:02      BCC:rel    Branch->$6594
+6592 A2:00      LDX:imm    #00
+6594 86:98      STX:zp     Zp RAM 0098
+6596 4C:50 65   JMP:abs    $6550
+6599 BE 65 CD 65 DB 65 F4 65 0E 66 
+
+65A3 E6:96      INC:zp     Zp RAM 0096
+65A5 D0:02      BNE:rel    Branch->$65A9
+65A7 E6:97      INC:zp     Zp RAM 0097
+65A9 A5:96      LDA:zp     Zp RAM 0096
+65AB 29:07      AND:imm    #07
+65AD AA:        TAX:imp    A-->X
+65AE B5:9B      LDA:zp,x   Zp RAM 009B
+65B0 8D:00 28   STA:abs    $2800
+65B3 B5:A3      LDA:zp,x   Zp RAM 00A3
+65B5 0A:        ASL:accum  
+65B6 0A:        ASL:accum  
+65B7 0A:        ASL:accum  
+65B8 0A:        ASL:accum  
+65B9 0A:        ASL:accum  
+65BA 8D:00 30   STA:abs    Digit Select/SA Enabled
+65BD 60:        RTS:imp    Ret from Sub
+65BE A2:07      LDX:imm    #07
+65C0 A9:FF      LDA:imm    #FF
+65C2 95:9B      STA:zp,x   Zp RAM 009B
+65C4 8A:        TXA:imp    X-->A
+65C5 95:A3      STA:zp,x   Zp RAM 00A3
+65C7 CA:        DEX:imp    X=X-1
+65C8 10:F6      BPL:rel    Branch->$65C0
+65CA 4C:67 65   JMP:abs    $6567
+65CD A2:07      LDX:imm    #07
+65CF A9:00      LDA:imm    #00
+65D1 95:9B      STA:zp,x   Zp RAM 009B
+65D3 95:A3      STA:zp,x   Zp RAM 00A3
+65D5 CA:        DEX:imp    X=X-1
+65D6 10:F9      BPL:rel    Branch->$65D1
+65D8 4C:67 65   JMP:abs    $6567
+65DB A2:07      LDX:imm    #07
+65DD A9:FF      LDA:imm    #FF
+65DF 85:9A      STA:zp     Zp RAM 009A
+65E1 95:9B      STA:zp,x   Zp RAM 009B
+65E3 A9:00      LDA:imm    #00
+65E5 95:A3      STA:zp,x   Zp RAM 00A3
+65E7 CA:        DEX:imp    X=X-1
+65E8 10:F3      BPL:rel    Branch->$65DD
+65EA A5:97      LDA:zp     Zp RAM 0097
+65EC 29:07      AND:imm    #07
+65EE AA:        TAX:imp    A-->X
+65EF 95:A3      STA:zp,x   Zp RAM 00A3
+65F1 4C:67 65   JMP:abs    $6567
+65F4 A5:97      LDA:zp     Zp RAM 0097
+65F6 29:07      AND:imm    #07
+65F8 AA:        TAX:imp    A-->X
+65F9 A9:00      LDA:imm    #00
+65FB 38:        SEC:imp    Set Carry
+65FC 2A:        ROL:accum  
+65FD CA:        DEX:imp    X=X-1
+65FE 10:FC      BPL:rel    Branch->$65FC
+6600 A8:        TAY:imp    A-->Y
+6601 A2:07      LDX:imm    #07
+6603 94:9B      STY:zp,x   Zp RAM 009B
+6605 8A:        TXA:imp    X-->A
+6606 95:A3      STA:zp,x   Zp RAM 00A3
+6608 CA:        DEX:imp    X=X-1
+6609 10:F8      BPL:rel    Branch->$6603
+660B 4C:67 65   JMP:abs    $6567
+660E AD:05 40   LDA:abs    R/W Flag
+6611 4D:03 40   EOR:abs    1K Byte Flag
+6614 4D:02 40   EOR:abs    1 Byte Flag
+6617 4D:00 40   EOR:abs    Address Flag
+661A 4D:01 40   EOR:abs    Data Flag
+661D 29:80      AND:imm    #80
+661F 85:99      STA:zp     Zp RAM 0099
+6621 AD:08 40   LDA:abs    Switch Inputs
+6624 29:10      AND:imm    #10
+6626 45:99      EOR:zp     Zp RAM 0099
+6628 85:99      STA:zp     Zp RAM 0099
+662A AD:00 41   LDA:abs    R/W Mode (D2=static D1=pulse)
+662D 29:04      AND:imm    #04
+662F 45:99      EOR:zp     Zp RAM 0099
+6631 85:99      STA:zp     Zp RAM 0099
+6633 AD:08 40   LDA:abs    Switch Inputs
+6636 4D:00 41   EOR:abs    R/W Mode (D2=static D1=pulse)
+6639 29:02      AND:imm    #02
+663B 45:99      EOR:zp     Zp RAM 0099
+663D 85:99      STA:zp     Zp RAM 0099
+663F AD:10 40   LDA:abs    Keypad: 3,7,B,F
+6642 4D:20 40   EOR:abs    Keypad: 2,6,A,E
+6645 4D:40 40   EOR:abs    Keypad: 1,5,9,D
+6648 4D:80 40   EOR:abs    Keypad: 0,4,8,C
+664B 29:1E      AND:imm    #1E
+664D 45:99      EOR:zp     Zp RAM 0099
+664F C5:9A      CMP:zp     Zp RAM 009A
+6651 F0:14      BEQ:rel    Branch->$6667
+6653 85:9A      STA:zp     Zp RAM 009A
+6655 A0:87      LDY:imm    #87
+6657 A5:9B      LDA:zp     Zp RAM 009B
+6659 10:02      BPL:rel    Branch->$665D
+665B A0:79      LDY:imm    #79
+665D A2:07      LDX:imm    #07
+665F 94:9B      STY:zp,x   Zp RAM 009B
+6661 8A:        TXA:imp    X-->A
+6662 95:A3      STA:zp,x   Zp RAM 00A3
+6664 CA:        DEX:imp    X=X-1
+6665 10:F8      BPL:rel    Branch->$665F
+6667 4C:67 65   JMP:abs    $6567
+666A 3F 06 5B 4F 66 6D 7D 07 7F 6F F7 FC B9 DE F9 F1 
+667A: 77 39 71 76 73 3E 0F 0B 07 03 0E 0A 06 02 0D 09 
+668A: 05 01 0C 08 04 00 FF FF FF FF FF FF FF FF FF FF 
+669A: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+66AA: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+66BA: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+66CA: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+66DA: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+66EA: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+66FA: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+670A: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+671A: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+672A: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+673A: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+674A: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+675A: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+676A: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+677A: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+678A: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+679A: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+67AA: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+67BA: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+67CA: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+67DA: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF 
+67EA: FF FF FF FF FF FF FF FF FF FF FF FF FF FF FF CE 
+67FA: C7 60 C7 60 A8 60 
+
