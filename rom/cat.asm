@@ -73,6 +73,17 @@ Col3                    = $4080
 
 Switches2               = $4100
 
+;
+; Program variables
+;
+
+Var82			= $82	; Used in Sig An. mode
+
+Var96			= $96	; Used in Sig An. mode
+Var97			= $97	; Used in Sig An. mode
+Var98			= $98	; Used in Sig An. mode
+Var9b			= $9b	; Used in Sig An. mode
+Var9c			= $9c	; Used in Sig An. mode
 
 			*=$6000
 
@@ -80,20 +91,26 @@ Switches2               = $4100
                         !byte                $54,$20,$31,$39,$38,$30,$2c,$20,$41,$54,$41,$52,$49,$2c,$20,$49 ; 6010
                         !byte                $4e,$43,$2e                                                     ; 6020
 
-
+; 
+; We jump here from two other locations: L6027 and L60ec
+; 
 L6023                   LDA $80              ; 6023 
                         AND #$7f             ; 6025 
                         STA $80              ; 6027 
-                        BIT SelfTestSR       ; 6029 
+                        BIT SelfTestSR       ; 6029 - Check selftest switch - reset catbox if no longer active
                         BPL L6031            ; 602C 
                         JMP NMI              ; 602E 
 
 L6031                   LDA Switches         ; 6031 
-                        AND #$02             ; 6034 
-                        BEQ L603e            ; 6036 
-                        JSR L606a            ; 6038 
+                        AND #$02             ; 6034 - Tester mode switch. 1->Sig An. 0->RW mode
+                        BEQ TesterMode       ; 6036 
+                        JSR SigAnMode        ; 6038 - Sig an. mode
                         JMP L6054            ; 603B 
 
+; 
+; tester mode switch set to RW
+;
+TesterMode
 L603e                   LDA #$00             ; 603E 
                         STA $9b              ; 6040 
                         STA $97              ; 6042 
@@ -117,21 +134,27 @@ L6058                   LDA $80              ; 6058
 
 L6067                   JMP L6023            ; 6067 
 
+;
+; Subroutine entry point
+; 
+; 	Called when tester mode switch is set to Sig An.
+;
+SigAnMode
 L606a                   LDA #$00             ; 606A 
-                        STA $96              ; 606C 
-                        STA $98              ; 606E 
-                        STA $82              ; 6070 
+                        STA Var96            ; 606C 
+                        STA Var98            ; 606E 
+                        STA Var82            ; 6070 
                         LDA #$10             ; 6072 
-                        STA $9b              ; 6074 
-                        LDA $9c              ; 6076 
+                        STA Var9b            ; 6074 
+                        LDA Var9c            ; 6076 
                         BEQ L6082            ; 6078 
-                        DEC $9c              ; 607A 
+                        DEC Var9c            ; 607A 
                         LDA #$40             ; 607C 
-                        STA $97              ; 607E 
+                        STA Var97            ; 607E 
                         BNE L6086            ; 6080 
 
 L6082                   LDA #$00             ; 6082 
-                        STA $97              ; 6084 
+                        STA Var97            ; 6084 
 
 L6086                   BIT SigSR            ; 6086 
                         BPL L608c            ; 6089 
