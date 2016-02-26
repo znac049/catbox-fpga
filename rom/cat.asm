@@ -54,17 +54,22 @@ RIOT_Wt_Div1K_En        = $1f
 GameBoxCounter          = $2000
 SegmentSelect           = $2b00
 DigitSelect             = $3000
-DisplayReset            = $3800
+SigAnalReset            = $3800
 
-AddrSR                  = $4000
-DataSR                  = $4001
-ByteSR                  = $4002
-KBitSR                  = $4003
-RWSR                    = $4005
-SelfTestSR              = $4006
-SigSR                   = $4007
+SourceAddrSwitch        = $4000
+SourceDataSwitch        = $4001
+ByteSwitch              = $4002
+KByteSwitch             = $4003
+SpareSwitch		= $4004
+RWSwitch                = $4005
+SelfTestSwitch          = $4006
+SigAnDone               = $4007
 
 Switches                = $4008
+ModeSw			= $02
+DataSetSw		= $04
+AddressIncSw		= $08
+ErrorDisplaySw		= $10
 
 Col0                    = $4010
 Col1                    = $4020
@@ -72,18 +77,46 @@ Col2                    = $4040
 Col3                    = $4080
 
 Switches2               = $4100
+PulseSw			= $02
+StaticSw		= $04
 
 ;
 ; Program variables
 ;
 
-Var82			= $82	; Used in Sig An. mode
+Var82			= $82	; Init to 0. Used in Sig An. mode
+	
+Var83	                = $83   ; Previous lower byte of sig???
+	
+Var84	                = $84   ; Previous upper byte of sig???
 
-Var96			= $96	; Used in Sig An. mode
-Var97			= $97	; Used in Sig An. mode
+Var86			= $86
+
+Var87			= $87
+	
+; Tester mode: Init to 0.
+Var94			= $94
+
+Var95			= $95
+	
+Var96			= $96	; Init to 0. Used in Sig An. mode
+
+; Tester mode: Init to 0.
+Var97			= $97	;
+
+; Tester mode: Init to 0.
 Var98			= $98	; Used in Sig An. mode
-Var9b			= $9b	; Used in Sig An. mode
-Var9c			= $9c	; Used in Sig An. mode
+
+Var99			= $99
+	
+Var9a			= $9a
+
+;  Tester mode: Init to 0.
+Var9b			= $9b	;
+
+; Tester mode: Init to 0.	
+; Sig An. mode: Gets written with #$40 if sig has changed??? Some sort of down counter/delay??
+Var9c			= $9c	;
 
 			*=$6000
 
@@ -97,7 +130,7 @@ Var9c			= $9c	; Used in Sig An. mode
 L6023                   LDA $80              ; 6023 
                         AND #$7f             ; 6025 
                         STA $80              ; 6027 
-                        BIT SelfTestSR       ; 6029 - Check selftest switch - reset catbox if no longer active
+                        BIT SelfTestSwitch   ; 6029 - Check selftest switch - reset catbox if no longer active
                         BPL L6031            ; 602C 
                         JMP NMI              ; 602E 
 
@@ -112,11 +145,12 @@ L6031                   LDA Switches         ; 6031
 ;
 TesterMode
 L603e                   LDA #$00             ; 603E 
-                        STA $9b              ; 6040 
-                        STA $97              ; 6042 
-                        STA $9c              ; 6044 
-                        STA $98              ; 6046 
-                        STA DisplayReset     ; 6048 
+                        STA Var9b            ; 6040 
+                        STA Var97            ; 6042 
+                        STA Var9c            ; 6044 
+                        STA Var98            ; 6046 
+                        STA SigAnalReset     ; 6048
+	
                         JSR L60ef            ; 604B 
                         JSR L62c7            ; 604E 
                         JSR L6324            ; 6051 
@@ -143,38 +177,47 @@ SigAnMode
 L606a                   LDA #$00             ; 606A 
                         STA Var96            ; 606C 
                         STA Var98            ; 606E 
-                        STA Var82            ; 6070 
+                        STA Var82            ; 6070
+	
                         LDA #$10             ; 6072 
-                        STA Var9b            ; 6074 
+                        STA Var9b            ; 6074
+	
                         LDA Var9c            ; 6076 
-                        BEQ L6082            ; 6078 
+                        BEQ L6082            ; 6078
+	
                         DEC Var9c            ; 607A 
                         LDA #$40             ; 607C 
                         STA Var97            ; 607E 
-                        BNE L6086            ; 6080 
+                        BNE L6086            ; 6080 - always branch
 
 L6082                   LDA #$00             ; 6082 
                         STA Var97            ; 6084 
 
-L6086                   BIT SigSR            ; 6086 
-                        BPL L608c            ; 6089 
+L6086                   BIT SigAnDone        ; 6086 
+                        BPL SigComplete      ; 6089 
                         RTS                  ; 608B 
 
-L608c                   LDX #$40             ; 608C 
-                        LDA RIOT_DRB         ; 608E 
+;
+; Signature analysis complete
+; 
+SigComplete
+L608c                   LDX #$40             ; 608C
+
+                        LDA RIOT_DRB         ; 608E - lower byte of signature
                         CMP $83              ; 6090 
                         BEQ L6096            ; 6092 
                         STX $9c              ; 6094 
+L6096                   STA $83              ; 6096
 
-L6096                   STA $83              ; 6096 
-                        LDA RIOT_DRA         ; 6098 
+
+                        LDA RIOT_DRA         ; 6098 - upper byte of signature
                         CMP $84              ; 609A 
                         BEQ L60a0            ; 609C 
                         STX $9c              ; 609E 
+L60a0                   STA $84              ; 60A0
 
-L60a0                   STA $84              ; 60A0 
                         LDA #$00             ; 60A2 
-                        STA DisplayReset     ; 60A4 
+                        STA SigAnalReset     ; 60A4 - hard reset the Signal Analyser
                         RTS                  ; 60A7 
 
 IRQ                     PHA                  ; 60A8 
@@ -188,7 +231,7 @@ IRQ                     PHA                  ; 60A8
                         STA $80              ; 60B2 
                         LDA #$2f             ; 60B4 
                         STA RIOT_Wt_Div64_En ; 60B6 
-                        LDA SelfTestSR       ; 60B8 
+                        LDA SelfTestSwitch   ; 60B8 
                         BMI L60c0            ; 60BB 
                         JSR L642e            ; 60BD 
 
@@ -211,7 +254,7 @@ NMI                     SEI                  ; 60C7 - Disable interrupts
                         LDX #$ff             ; 60C9 
                         TXS                  ; 60CB 
                         LDA #$00             ; 60CC 
-                        BIT SelfTestSR       ; 60CE 
+                        BIT SelfTestSwitch   ; 60CE 
                         BPL SelfTest         ; 60D1 
                         JMP NormalOp         ; 60D3 
 
@@ -224,7 +267,7 @@ ClrRAM                  STA $00,X            ; 60D6 - Clear RAM from $80-$FF
                         BMI ClrRAM           ; 60D9 
 
                         STA DigitSelect      ; 60DB - Blank the display
-                        STA DisplayReset     ; 60DE
+                        STA SigAnalReset     ; 60DE
 	
                         STA RIOT_RdTimer     ; 60E1 - Disable any pending RIOT interrupt (I think)
 	
@@ -238,70 +281,82 @@ ClrRAM                  STA $00,X            ; 60D6 - Clear RAM from $80-$FF
 
 	
 
-L60ef                   LDA Switches2        ; 60EF 
+L60ef                   LDA Switches2        ; 60EF - Static and pulse switches
                         ROR                  ; 60F2 
                         ROR                  ; 60F3 
                         ROR                  ; 60F4 
                         JSR L6295            ; 60F5 
                         LDY #$00             ; 60F8 
-                        BIT $9a              ; 60FA 
+                        BIT Var9a            ; 60FA 
                         BMI L6101            ; 60FC 
                         BVS L610f            ; 60FE 
                         RTS                  ; 6100 
 
 L6101                   LDA #$20             ; 6101 
-                        STA $98              ; 6103 
-                        STY $99              ; 6105 
-                        LDA $86              ; 6107 
-                        STA $83              ; 6109 
-                        LDA $87              ; 610B 
-                        STA $84              ; 610D 
+                        STA Var98            ; 6103
+	
+                        STY Var99            ; 6105 
 
-L610f                   LDA $9a              ; 610F 
+                        LDA Var86            ; 6107 
+                        STA Var83            ; 6109 
+
+	                LDA Var87            ; 610B 
+                        STA Var84            ; 610D 
+
+L610f                   LDA Var9a            ; 610F 
                         AND #$bf             ; 6111 
-                        STA $9a              ; 6113 
-                        STY $96              ; 6115 
-                        LDA $83              ; 6117 
-                        STA $86              ; 6119 
-                        LDA $84              ; 611B 
-                        STA $87              ; 611D 
+                        STA Var9a            ; 6113 
+
+                        STY Var96            ; 6115
+	
+                        LDA Var83            ; 6117 
+                        STA Var86            ; 6119
+	
+                        LDA Var84            ; 611B 
+                        STA Var87            ; 611D
+	
 L611f                   LDA Switches         ; 611F 
-                        AND #$02             ; 6122 
+                        AND #ModeSw          ; 6122 
                         BNE L612b            ; 6124 
-                        BIT SelfTestSR       ; 6126 
+                        BIT SelfTestSwitch   ; 6126 
                         BPL L612c            ; 6129 
 
 L612b                   RTS                  ; 612B 
 
-L612c                   STY $94              ; 612C 
-                        STY $95              ; 612E 
-                        BIT KBitSR           ; 6130 
+L612c                   STY Var94            ; 612C 
+                        STY Var95            ; 612E 
+                        BIT KByteSwitch      ; 6130 
                         BPL L6139            ; 6133 
                         LDA #$03             ; 6135 
-                        STA $95              ; 6137 
+                        STA Var95            ; 6137 
 
-L6139                   BIT RWSR             ; 6139 
+L6139                   BIT RWSwitch         ; 6139 
                         BMI L6141            ; 613C 
                         JMP L61c5            ; 613E 
 
-L6141                   BIT $4004            ; 6141 
+; 
+; Not sure why we check a switch that isn't there?
+; 
+L6141                   BIT SpareSwitch      ; 6141 
                         BPL L6149            ; 6144 
                         JMP L6221            ; 6146 
 
-L6149                   BIT ByteSR           ; 6149 
-                        BPL L615c            ; 614C 
+L6149                   BIT ByteSwitch       ; 6149 
+                        BPL L615c            ; 614C
+	
                         LDA #$0b             ; 614E 
                         SEI                  ; 6150 
-                        STA GameBoxCounter   ; 6151 
+                        STA GameBoxCounter   ; 6151
+	
                         LDA ($83),Y          ; 6154 
                         CLI                  ; 6156 
                         STA $82              ; 6157 
                         JMP L6194            ; 6159 
 
-L615c                   LDA DataSR           ; 615C 
+L615c                   LDA SourceDataSwitch ; 615C 
                         BMI L616c            ; 615F 
                         LDA $83              ; 6161 
-                        BIT AddrSR           ; 6163 
+                        BIT SourceAddrSwitch ; 6163 
                         BPL L616a            ; 6166 
                         EOR #$ff             ; 6168 
 
@@ -333,7 +388,7 @@ L6187                   DEC $94              ; 6187
 L6194                   BIT $9a              ; 6194 
                         BPL L61c2            ; 6196 
                         LDA Switches2        ; 6198 
-                        AND #$02             ; 619B 
+                        AND #PulseSw         ; 619B 
                         BEQ L61c2            ; 619D 
                         LDA $86              ; 619F 
                         STA $83              ; 61A1 
@@ -342,13 +397,13 @@ L6194                   BIT $9a              ; 6194
                         JMP L611f            ; 61A7 
 
 L61aa                   LDX #$00             ; 61AA 
-L61ac                   BIT SelfTestSR       ; 61AC 
+L61ac                   BIT SelfTestSwitch   ; 61AC 
                         BMI L61c2            ; 61AF 
                         LDA Switches         ; 61B1 
-                        AND #$02             ; 61B4 
+                        AND #ModeSw          ; 61B4 
                         BNE L61c2            ; 61B6 
                         LDA Switches2        ; 61B8 
-                        AND #$02             ; 61BB 
+                        AND #PulseSw         ; 61BB 
                         BNE L61aa            ; 61BD 
                         DEX                  ; 61BF 
                         BNE L61ac            ; 61C0 
@@ -356,15 +411,15 @@ L61ac                   BIT SelfTestSR       ; 61AC
 L61c2                   STY $98              ; 61C2 
                         RTS                  ; 61C4 
 
-L61c5                   BIT ByteSR           ; 61C5 
+L61c5                   BIT ByteSwitch       ; 61C5 
                         BPL L61d0            ; 61C8 
                         JSR L620f            ; 61CA 
                         JMP L61f6            ; 61CD 
 
-L61d0                   LDA DataSR           ; 61D0 
+L61d0                   LDA SourceDataSwitch ; 61D0 
                         BMI L61e0            ; 61D3 
                         LDA $83              ; 61D5 
-                        BIT AddrSR           ; 61D7 
+                        BIT SourceAddrSwitch ; 61D7 
                         BPL L61de            ; 61DA 
                         EOR #$ff             ; 61DC 
 
@@ -389,7 +444,7 @@ L61f6                   LDA $86              ; 61F6
                         BIT $9a              ; 61FE 
                         BPL L620c            ; 6200 
                         LDA Switches2        ; 6202 
-                        AND #$02             ; 6205 
+                        AND #PulseSw         ; 6205 
                         BEQ L620c            ; 6207 
                         JMP L611f            ; 6209 
 
@@ -411,12 +466,12 @@ L620f                   SEI                  ; 620F
 L6221                   STY $82              ; 6221 
                         STY $85              ; 6223 
                         LDA #$0f             ; 6225 
-                        BIT ByteSR           ; 6227 
+                        BIT ByteSwitch       ; 6227 
                         BPL L6230            ; 622A 
                         LDA #$07             ; 622C 
                         BNE L6237            ; 622E 
 
-L6230                   BIT KBitSR           ; 6230 
+L6230                   BIT KByteSwitch      ; 6230 
                         BPL L6237            ; 6233 
                         LDA #$1f             ; 6235 
 
@@ -426,7 +481,7 @@ L6239                   LDA #$0b             ; 6239
                         STA GameBoxCounter   ; 623C 
                         LDA ($83),Y          ; 623F 
                         CLI                  ; 6241 
-                        BIT DataSR           ; 6242 
+                        BIT SourceDataSwitch ; 6242 
                         BPL L6254            ; 6245 
                         CLC                  ; 6247 
                         ADC $82              ; 6248 
@@ -436,7 +491,7 @@ L6239                   LDA #$0b             ; 6239
                         STA $85              ; 624F 
                         JMP L6267            ; 6251 
 
-L6254                   BIT AddrSR           ; 6254 
+L6254                   BIT SourceAddrSwitch ; 6254 
                         BMI L6263            ; 6257 
                         CLC                  ; 6259 
                         ADC $82              ; 625A 
@@ -463,10 +518,10 @@ L627a                   LDA $82              ; 627A
                         LDA $85              ; 627E 
                         STA $84              ; 6280 
                         LDA #$02             ; 6282 
-                        BIT ByteSR           ; 6284 
+                        BIT ByteSwitch       ; 6284 
                         BMI L6290            ; 6287 
                         ASL                  ; 6289 
-                        BIT KBitSR           ; 628A 
+                        BIT KByteSwitch      ; 628A 
                         BPL L6290            ; 628D 
                         ASL                  ; 628F 
 
@@ -513,7 +568,7 @@ L62c7                   LDA Switches2        ; 62C7
 
 L62cf                   LDA #$00             ; 62CF 
                         STA $96              ; 62D1 
-                        LDA RWSR             ; 62D3 
+                        LDA RWSwitch         ; 62D3 
                         BPL L6302            ; 62D6 
                         LDY #$00             ; 62D8 
 L62da                   LDA #$0b             ; 62DA 
@@ -525,8 +580,8 @@ L62da                   LDA #$0b             ; 62DA
                         LDA #$20             ; 62E5 
                         STA $98              ; 62E7 
                         LDA #$01             ; 62E9 
-                        STA DisplayReset     ; 62EB 
-                        BIT RWSR             ; 62EE 
+                        STA SigAnalReset     ; 62EB 
+                        BIT RWSwitch         ; 62EE 
                         BPL L62fa            ; 62F1 
                         LDA Switches2        ; 62F3 
                         AND #$04             ; 62F6 
@@ -534,7 +589,7 @@ L62da                   LDA #$0b             ; 62DA
 
 L62fa                   LDA #$00             ; 62FA 
                         STA $98              ; 62FC 
-                        STA DisplayReset     ; 62FE 
+                        STA SigAnalReset     ; 62FE 
                         RTS                  ; 6301 
 
 L6302                   LDY #$00             ; 6302 
@@ -542,8 +597,8 @@ L6302                   LDY #$00             ; 6302
                         LDA #$20             ; 6307 
                         STA $98              ; 6309 
                         LDA #$01             ; 630B 
-                        STA DisplayReset     ; 630D 
-L6310                   BIT RWSR             ; 6310 
+                        STA SigAnalReset     ; 630D 
+L6310                   BIT RWSwitch         ; 6310 
                         BMI L631c            ; 6313 
                         LDA Switches2        ; 6315 
                         AND #$04             ; 6318 
@@ -551,7 +606,7 @@ L6310                   BIT RWSR             ; 6310
 
 L631c                   LDA #$00             ; 631C 
                         STA $98              ; 631E 
-                        STA DisplayReset     ; 6320 
+                        STA SigAnalReset     ; 6320 
                         RTS                  ; 6323 
 
 L6324                   LDA Switches         ; 6324 
@@ -881,11 +936,11 @@ L653b                   DEX                  ; 653B
 
 L6543                   LDY #$00             ; 6543 
                         STY $2800            ; 6545 
-                        BIT SelfTestSR       ; 6548 
+                        BIT SelfTestSwitch   ; 6548 
                         BMI L653b            ; 654B 
                         JMP NMI              ; 654D 
 
-L6550                   LDA SelfTestSR       ; 6550 
+L6550                   LDA SelfTestSwitch   ; 6550 
                         BMI L6558            ; 6553 
                         JMP NMI              ; 6555 
 
@@ -980,56 +1035,3 @@ L65a9                   LDA $96              ; 65A9
                         !byte                $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff ; 67d0
                         !byte                $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff ; 67e0
                         !byte                $ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ce,$c7,$60,$c7,$60,$a8,$60 ; 67f0
-; Labels:
-;
-; Fred                  = $0311
-; Switches2             = $4100
-; Col3                  = $4080
-; Col2                  = $4040
-; Col1                  = $4020
-; Col0                  = $4010
-; Switches              = $4008
-; SigSR                 = $4007
-; SelfTestSR            = $4006
-; RWSR                  = $4005
-; KBitSR                = $4003
-; ByteSR                = $4002
-; DataSR                = $4001
-; AddrSR                = $4000
-; DisplayReset          = $3800
-; DigitSelect           = $3000
-; SegmentSelect         = $2b00
-; GameBoxCounter        = $2000
-; RIOT_Wt_Div1K_En      = $001f
-; RIOT_Wt_Div64_En      = $001e
-; RIOT_Wt_Div8_En       = $001d
-; RIOT_Wt_Div1_En       = $001c
-; RIOT_Reg_1b           = $001b
-; RIOT_Reg_1a           = $001a
-; RIOT_Reg_19           = $0019
-; RIOT_Reg_18           = $0018
-; RIOT_Wt_Div1K_Dis     = $0017
-; RIOT_Wt_Div64_Dis     = $0016
-; RIOT_Wt_Div8_Dis      = $0015
-; RIOT_Wt_Div1_Dis      = $0014
-; RIOT_Reg_13           = $0013
-; RIOT_Reg_12           = $0012
-; RIOT_Reg_11           = $0011
-; RIOT_Reg_10           = $0010
-; RIOT_Reg_0f           = $000f
-; RIOT_Reg_0e           = $000e
-; RIOT_Reg_0d           = $000d
-; RIOT_Rt_En            = $000c
-; RIOT_Reg_0b           = $000b
-; RIOT_Reg_0a           = $000a
-; RIOT_Reg_09           = $0009
-; RIOT_Reg_08           = $0008
-; RIOT_WEDC_Pos         = $0007
-; RIOT_WEDC_Neg         = $0006
-; RIOT_Reg5             = $0005
-; RIOT_RdTimer          = $0004
-; RIOT_DDRB             = $0003
-; RIOT_DRB              = $0002
-; RIOT_DDRA             = $0001
-; RIOT_DRA              = $0000
-
